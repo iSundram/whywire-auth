@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuration for Cloudflare Pages with edge runtime
+  // Basic configuration for Cloudflare Pages
   experimental: {
     serverComponentsExternalPackages: ['appwrite']
   },
   
-  // Enable images optimization for Cloudflare
+  // Disable image optimization
   images: {
     unoptimized: true
   },

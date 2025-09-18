@@ -157,6 +157,8 @@ class AppwriteAuthService {
   // Create OAuth2 session URL - redirects to WhyWire dashboard after success
   createOAuth2Session(provider: string): void {
     try {
+      // For static export, we use direct redirect to Appwrite OAuth
+      // The success URL will be handled by Appwrite directly
       account.createOAuth2Session(
         provider as any,
         config.getSuccessRedirectUrl(), // Redirect to dashboard.whywire.app
