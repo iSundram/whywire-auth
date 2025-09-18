@@ -1,16 +1,3 @@
-import { WorkOS } from '@workos-inc/node';
-
-// This example uses Next.js with React Server Components.
-// Because this page is an RSC, the code stays on the server, which allows
-// us to use the WorkOS Node SDK without exposing our API key to the client.
-//
-// If your application is a single page app (SPA), you will need to:
-// - create a form that can POST to an endpoint in your backend
-// - call the `getAuthorizationURL` method in that endpoint
-// - redirect the user to the returned URL
-
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
-
 'use client';
 
 import { authService } from '@/lib/auth';
