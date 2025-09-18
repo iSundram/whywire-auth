@@ -1,20 +1,16 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-
 import './globals.css';
 import BackLink from './back-link';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
-  title: 'AuthKit',
-  description: 'A collection of examples for AuthKit',
+  title: 'WhyWire Auth',
+  description: 'Authentication system for WhyWire powered by Appwrite',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <BackLink />
         {children}
       </body>

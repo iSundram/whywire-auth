@@ -3,6 +3,15 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { config } from '@/lib/appwrite';
 
+// Generate static params for the supported OAuth providers
+export async function generateStaticParams() {
+  return [
+    { provider: 'google' },
+    { provider: 'github' },
+    { provider: 'microsoft' },
+  ];
+}
+
 // Generic OAuth callback handler that redirects to dashboard.whywire.app
 export async function GET(request: Request, { params }: { params: { provider: string } }) {
   const url = new URL(request.url);

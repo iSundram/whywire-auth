@@ -33,7 +33,7 @@ export default function Home() {
               href="/using-your-own-ui/sign-up/email-password"
               className="text-indigo-600 hover:text-indigo-500 text-sm"
             >
-              Don't have an account? Sign up
+              Don&apos;t have an account? Sign up
             </Link>
           </div>
           
