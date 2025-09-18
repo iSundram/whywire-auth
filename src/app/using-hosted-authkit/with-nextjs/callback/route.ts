@@ -1,3 +1,8 @@
-import { handleAuth } from '@workos-inc/authkit-nextjs';
+import { NextResponse } from 'next/server';
 
-export const GET = handleAuth({ returnPathname: '/using-hosted-authkit/with-nextjs/' });
+// This callback route is disabled for Appwrite integration
+// Please use the basic or with-session examples for Appwrite OAuth flows
+
+export async function GET(request: Request) {
+  return NextResponse.redirect('http://localhost:3000/using-hosted-authkit/with-nextjs');
+}

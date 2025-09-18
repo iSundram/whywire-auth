@@ -1,52 +1,54 @@
-import { WorkOS } from '@workos-inc/node';
 import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 import { getJwtSecretKey } from '../auth';
+import { account, client } from '@/lib/appwrite';
 
-// This is a Next.js Route Handler.
+// This is a Next.js Route Handler for Appwrite OAuth callback.
 //
 // If your application is a single page app (SPA) with a separate backend you will need to:
 // - create a backend endpoint to handle the request
 // - adapt the code below in your endpoint
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
-
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const code = url.searchParams.get('code') || '';
+  const userId = url.searchParams.get('userId');
+  const secret = url.searchParams.get('secret');
+
+  if (!userId || !secret) {
+    return NextResponse.json({ error: 'Missing userId or secret' }, { status: 400 });
+  }
 
   try {
-    const { user } = await workos.userManagement.authenticateWithCode({
-      clientId: process.env.WORKOS_CLIENT_ID || '',
-      code,
-    });
+    // Create a session with the OAuth secret
+    const session = await account.createSession(userId, secret);
+
+    // Get user information
+    const user = await account.get();
 
     // Create a JWT with the user's information
-    // Here you might lookup and retrieve user details from your database
-    const token = await new SignJWT({ user })
+    const token = await new SignJWT({ user, session })
       .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
       .setIssuedAt()
-      .setExpirationTime('1h')
+      .setExpirationTime('24h')
       .sign(getJwtSecretKey());
 
-    // Cleanup params
-    url.searchParams.delete('code');
-
-    // Store the session and redirect to the application
-    url.pathname = '/using-hosted-authkit/with-session';
-    const response = NextResponse.redirect(url);
+    // Cleanup params and redirect to the application
+    const redirectUrl = new URL('/using-hosted-authkit/with-session', url.origin);
+    const response = NextResponse.redirect(redirectUrl);
 
     response.cookies.set({
-      name: 'token',
+      name: 'appwrite_session',
       value: token,
       httpOnly: true,
       path: '/',
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 24 hours
     });
 
     return response;
   } catch (error) {
-    return NextResponse.json(error);
+    console.error('OAuth callback error:', error);
+    return NextResponse.json({ error: 'Authentication failed' }, { status: 400 });
   }
 }
