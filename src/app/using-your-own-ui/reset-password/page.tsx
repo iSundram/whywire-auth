@@ -15,8 +15,8 @@ export default function ResetPassword({
   // If your application is a single page app (SPA), you will need to:
   // - handle the form submission in `<form onSubmit>`
   // - make an API call to your backend (e.g using `fetch`)
-  const [sendResetState, sendResetAction] = useFormState(sendReset, { error: null });
-  const [resetPasswordState, resetPasswordAction] = useFormState(resetPassword, { error: null });
+  const [sendResetState, sendResetAction] = useFormState(sendReset, { error: { code: '', message: '', type: '' } });
+  const [resetPasswordState, resetPasswordAction] = useFormState(resetPassword, { error: { code: '', message: '', type: '' } });
 
   if (!token) {
     return (

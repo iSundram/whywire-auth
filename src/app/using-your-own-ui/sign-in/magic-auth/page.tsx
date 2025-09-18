@@ -10,8 +10,8 @@ export default function SignInWithMagicAuth() {
   // If your application is a single page app (SPA), you will need to:
   // - handle the form submission in `<form onSubmit>`
   // - make an API call to your backend (e.g using `fetch`)
-  const [sendCodeState, sendCodeAction] = useFormState(sendCode, { error: null });
-  const [signInState, signInAction] = useFormState(signIn, { error: null });
+  const [sendCodeState, sendCodeAction] = useFormState(sendCode, { error: { code: '', message: '', type: '' } });
+  const [signInState, signInAction] = useFormState(signIn, { error: { code: '', message: '', type: '' } });
   const [email, setEmail] = React.useState('');
 
   if (sendCodeState?.error === null) {

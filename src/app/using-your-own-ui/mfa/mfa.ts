@@ -2,86 +2,77 @@
 
 // These are Next.js server actions.
 //
-// If your application is a single page app (SPA) with a separate backend you will need to:
-// - create a backend endpoint to handle each request
-// - adapt the code below in each of those endpoints
-//
-// Please also note that for the sake of simplicity, we return all errors here.
-// In a real application, you should pay attention to which errors make it
-// to the client for security reasons.
+// Note: Appwrite doesn't have built-in TOTP/MFA like WorkOS.
+// This is a placeholder implementation that would need to be
+// extended with a third-party TOTP library or Appwrite Functions.
 
-import { WorkOS } from '@workos-inc/node';
+import { Client, Account } from 'appwrite';
+import { cookies } from 'next/headers';
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
+// Initialize Appwrite client for server-side operations
+function createAppwriteClient() {
+  const client = new Client();
+  
+  client
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id');
+
+  // Get session from cookies
+  const session = cookies().get('appwrite-session');
+  if (session) {
+    client.setSession(session.value);
+  }
+
+  return new Account(client);
+}
 
 export async function signIn(prevState: any, formData: FormData): Promise<SignInResponse> {
   try {
-    // For the sake of simplicity, we directly return the user here.
-    // In a real application, you would probably store the user in a token (JWT)
-    // and store that token in your DB or use cookies.
-    return await workos.userManagement.authenticateWithPassword({
-      clientId: process.env.WORKOS_CLIENT_ID || '',
-      email: String(formData.get('email')),
-      password: String(formData.get('password')),
-    });
-  } catch (error) {
-    const err = JSON.parse(JSON.stringify(error));
-
-    if (err.rawData.code === 'mfa_enrollment') {
-      const { authenticationFactor, authenticationChallenge } =
-        await workos.userManagement.enrollAuthFactor({
-          userId: err.rawData.user.id,
-          type: 'totp',
-          totpIssuer: 'WorkOS',
-          totpUser: err.rawData.user.email,
-        });
-      return {
-        authenticationFactor,
-        authenticationChallenge,
-        pendingAuthenticationToken: err.rawData.pending_authentication_token,
-      };
-    }
-
-    if (err.rawData.code === 'mfa_challenge') {
-      const challenge = await workos.mfa.challengeFactor({
-        authenticationFactorId: err.rawData.authentication_factors[0].id,
-      });
-      return {
-        authenticationChallenge: challenge,
-        pendingAuthenticationToken: err.rawData.pending_authentication_token,
-      };
-    }
-
-    return { error: err };
+    // Note: This is a placeholder. MFA would need to be implemented
+    // using Appwrite Functions or a third-party service
+    return { 
+      error: {
+        code: 'MFA_NOT_IMPLEMENTED',
+        message: 'MFA functionality is not yet implemented with Appwrite. Please use email/password or OAuth authentication.',
+        type: 'feature_not_available'
+      }
+    };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }
 
 export async function verifyTotp(prevState: any, formData: FormData) {
   try {
-    // For the sake of simplicity, we directly return the user here.
-    // In a real application, you would probably store the user in a token (JWT)
-    // and store that token in your DB or use cookies.
-    return await workos.userManagement.authenticateWithTotp({
-      clientId: process.env.WORKOS_CLIENT_ID || '',
-      authenticationChallengeId: String(formData.get('authenticationChallengeId')),
-      pendingAuthenticationToken: String(formData.get('pendingAuthenticationToken')),
-      code: String(formData.get('code')),
-    });
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+    // Note: TOTP verification would need to be implemented
+    // using Appwrite Functions or a third-party TOTP library
+    return { 
+      error: {
+        code: 'TOTP_NOT_IMPLEMENTED',
+        message: 'TOTP verification is not yet implemented with Appwrite.',
+        type: 'feature_not_available'
+      }
+    };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }
 
-type UnpackPromise<T> = T extends Promise<infer U> ? U : T;
-type AuthenticateResponse = UnpackPromise<
-  ReturnType<typeof workos.userManagement.authenticateWithPassword>
->;
-type EnrollResponse = UnpackPromise<ReturnType<typeof workos.userManagement.enrollAuthFactor>>;
-type SignInResponse =
-  | AuthenticateResponse
-  | {
-      authenticationFactor?: EnrollResponse['authenticationFactor'];
-      authenticationChallenge: EnrollResponse['authenticationChallenge'];
-      pendingAuthenticationToken: string;
-    }
-  | { error: any };
+// Type definitions for compatibility
+type SignInResponse = {
+  authenticationFactor?: any;
+  authenticationChallenge?: any;
+  pendingAuthenticationToken?: string;
+} | { error: any };

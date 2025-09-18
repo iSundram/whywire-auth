@@ -1,19 +1,16 @@
-import { getSignInUrl, getUser, signOut } from '@workos-inc/authkit-nextjs';
+import { getUser, signOut } from '../with-session/auth';
 
 export default async function WithNextjs() {
   // Retrieves the user from the session or returns `null` if no user is signed in
   const { user } = await getUser();
 
-  // Get the URL to redirect the user to AuthKit to sign in
-  const signInUrl = await getSignInUrl();
-
   return (
     <main>
-      <h1>Using hosted AuthKit</h1>
-      <h2>With Next.js library</h2>
+      <h1>Using Appwrite Authentication</h1>
+      <h2>With Next.js</h2>
       {user ? (
         <>
-          <p>Welcome back {user?.firstName && `, ${user?.firstName}`}</p>
+          <p>Welcome back {user?.name && `, ${user?.name}`}</p>
           <form
             action={async () => {
               'use server';
@@ -24,7 +21,7 @@ export default async function WithNextjs() {
           </form>
         </>
       ) : (
-        <a href={signInUrl}>Sign in</a>
+        <a href="/using-your-own-ui/sign-in/email-password">Sign in</a>
       )}
       <pre>{JSON.stringify(user, null, 2)}</pre>
     </main>

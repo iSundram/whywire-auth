@@ -10,21 +10,40 @@
 // In a real application, you should pay attention to which errors make it
 // to the client for security reasons.
 
-import { WorkOS } from '@workos-inc/node';
+import { Client, Account } from 'appwrite';
+import { ID } from 'appwrite';
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
+// Initialize Appwrite client for server-side operations
+function createAppwriteClient() {
+  const client = new Client();
+  
+  client
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id');
+
+  return new Account(client);
+}
 
 export async function signUp(prevState: any, formData: FormData) {
   try {
-    // For the sake of simplicity, we directly return the user here.
-    // In a real application, you would probably redirect the user to sign-in.
-    return await workos.userManagement.createUser({
-      email: String(formData.get('email')),
-      password: String(formData.get('password')),
-      firstName: String(formData.get('firstName')),
-      lastName: String(formData.get('lastName')),
-    });
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+    const account = createAppwriteClient();
+    const email = String(formData.get('email'));
+    const password = String(formData.get('password'));
+    const firstName = String(formData.get('firstName'));
+    const lastName = String(formData.get('lastName'));
+    const name = `${firstName} ${lastName}`.trim();
+
+    // Create user with Appwrite
+    const user = await account.create(ID.unique(), email, password, name);
+
+    return { user };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }

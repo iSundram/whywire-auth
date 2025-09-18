@@ -10,29 +10,61 @@
 // In a real application, you should pay attention to which errors make it
 // to the client for security reasons.
 
-import { WorkOS } from '@workos-inc/node';
+import { Client, Account } from 'appwrite';
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
+// Initialize Appwrite client for server-side operations
+function createAppwriteClient() {
+  const client = new Client();
+  
+  client
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id');
+
+  return new Account(client);
+}
 
 export async function sendReset(prevState: any, formData: FormData) {
   try {
+    const account = createAppwriteClient();
     const email = String(formData.get('email'));
-    return await workos.userManagement.sendPasswordResetEmail({
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    
+    // Send password recovery email
+    const token = await account.createRecovery(
       email,
-      passwordResetUrl: `http://localhost:3000/using-your-own-ui/reset-password?email=${email}`,
-    });
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+      `${baseUrl}/using-your-own-ui/reset-password`
+    );
+
+    return { token };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }
 
 export async function resetPassword(prevState: any, formData: FormData) {
   try {
-    return await workos.userManagement.resetPassword({
-      newPassword: String(formData.get('newPassword')),
-      token: String(formData.get('token')),
-    });
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+    const account = createAppwriteClient();
+    const userId = String(formData.get('userId'));
+    const secret = String(formData.get('secret'));
+    const newPassword = String(formData.get('newPassword'));
+
+    // Reset password using the recovery token
+    const token = await account.updateRecovery(userId, secret, newPassword);
+
+    return { token };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }

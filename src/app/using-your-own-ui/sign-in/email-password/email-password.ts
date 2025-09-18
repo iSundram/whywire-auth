@@ -1,30 +1,63 @@
 'use server';
 
-// These are Next.js server actions.
-//
-// If your application is a single page app (SPA) with a separate backend you will need to:
-// - create a backend endpoint to handle each request
-// - adapt the code below in each of those endpoints
-//
-// Please also note that for the sake of simplicity, we return all errors here.
-// In a real application, you should pay attention to which errors make it
-// to the client for security reasons.
+import { Client, Account } from 'appwrite';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { config } from '@/lib/appwrite';
 
-import { WorkOS } from '@workos-inc/node';
+// Initialize Appwrite client for server-side operations
+function createAppwriteClient() {
+  const client = new Client();
+  
+  client
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id');
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
+  return new Account(client);
+}
 
 export async function signIn(prevState: any, formData: FormData) {
   try {
-    // For the sake of simplicity, we directly return the user here.
-    // In a real application, you would probably store the user in a token (JWT)
-    // and store that token in your DB or use cookies.
-    return await workos.userManagement.authenticateWithPassword({
-      clientId: process.env.WORKOS_CLIENT_ID || '',
-      email: String(formData.get('email')),
-      password: String(formData.get('password')),
+    const account = createAppwriteClient();
+    const email = String(formData.get('email'));
+    const password = String(formData.get('password'));
+
+    // Create session with Appwrite
+    const session = await account.createEmailPasswordSession(email, password);
+    
+    // Store session in cookies for cross-domain access
+    cookies().set('appwrite-session', session.secret, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+      domain: process.env.NODE_ENV === 'production' ? '.whywire.app' : undefined
     });
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+
+    // Get user details
+    const client = new Client();
+    client
+      .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+      .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id')
+      .setSession(session.secret);
+      
+    const userAccount = new Account(client);
+    const user = await userAccount.get();
+
+    // Return success with redirect flag
+    return { 
+      user, 
+      session,
+      redirectTo: config.getSuccessRedirectUrl() // This will redirect to dashboard.whywire.app
+    };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }

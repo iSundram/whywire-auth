@@ -9,8 +9,8 @@ export default function UpdateUser() {
   // If your application is a single page app (SPA), you will need to:
   // - handle the form submission in `<form onSubmit>`
   // - make an API call to your backend (e.g using `fetch`)
-  const [getUserState, getUserAction] = useFormState(getUser, { error: null });
-  const [updateUserState, updateUserAction] = useFormState(updateUser, { error: null });
+  const [getUserState, getUserAction] = useFormState(getUser, { error: { code: '', message: '', type: '' } });
+  const [updateUserState, updateUserAction] = useFormState(updateUser, { error: { code: '', message: '', type: '' } });
 
   if (!('user' in getUserState)) {
     return (
@@ -50,29 +50,18 @@ export default function UpdateUser() {
         </div>
 
         <div>
-          <label htmlFor="firstName">First Name</label>
+          <label htmlFor="name">Full Name</label>
           <input
-            type="firstName"
-            name="firstName"
-            id="firstName"
-            autoComplete="given-name"
-            defaultValue={getUserState.user.firstName ?? ''}
+            type="text"
+            name="name"
+            id="name"
+            autoComplete="name"
+            defaultValue={getUserState.user.name ?? ''}
             autoFocus
           />
         </div>
 
-        <div>
-          <label htmlFor="lastName">Last Name</label>
-          <input
-            type="lastName"
-            name="lastName"
-            id="lastName"
-            autoComplete="family-name"
-            defaultValue={getUserState.user.lastName ?? ''}
-          />
-        </div>
-
-        <input type="hidden" name="userId" value={getUserState.user.id} />
+        <input type="hidden" name="userId" value={getUserState.user.$id} />
 
         <button type="submit">Update user details</button>
       </form>

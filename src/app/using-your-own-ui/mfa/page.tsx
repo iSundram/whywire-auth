@@ -10,8 +10,8 @@ export default function Mfa() {
   // If your application is a single page app (SPA), you will need to:
   // - handle the form submission in `<form onSubmit>`
   // - make an API call to your backend (e.g using `fetch`)
-  const [signInState, signInAction] = useFormState(signIn, { error: null });
-  const [verifyState, verifyAction] = useFormState(verifyTotp, { error: null });
+  const [signInState, signInAction] = useFormState(signIn, { error: { code: '', message: '', type: '' } });
+  const [verifyState, verifyAction] = useFormState(verifyTotp, { error: { code: '', message: '', type: '' } });
 
   if (!('authenticationChallenge' in signInState) || 'user' in signInState) {
     return (

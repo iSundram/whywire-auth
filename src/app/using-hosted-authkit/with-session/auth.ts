@@ -1,49 +1,53 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { jwtVerify } from 'jose';
-import type { User } from '@workos-inc/node';
+import { Client, Account } from 'appwrite';
+import type { Models } from 'appwrite';
 
-export function getJwtSecretKey() {
-  const secret = process.env.JWT_SECRET_KEY;
+// Initialize Appwrite client for server-side operations
+function createAppwriteClient() {
+  const client = new Client();
+  
+  client
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id');
 
-  if (!secret) {
-    throw new Error('JWT_SECRET_KEY is not set');
+  // Get session from cookies
+  const session = cookies().get('appwrite-session');
+  if (session) {
+    client.setSession(session.value);
   }
 
-  return new Uint8Array(Buffer.from(secret, 'base64'));
+  return new Account(client);
 }
 
-export async function verifyJwtToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, getJwtSecretKey());
-    return payload;
-  } catch (error) {
-    return null;
-  }
-}
-
-// Verify the JWT and return the user
+// Verify the session and return the user
 export async function getUser(): Promise<{
   isAuthenticated: boolean;
-  user?: User | null;
+  user?: Models.User<Models.Preferences> | null;
 }> {
-  const token = cookies().get('token')?.value;
-
-  if (token) {
-    const verifiedToken = await verifyJwtToken(token);
-    if (verifiedToken) {
-      return {
-        isAuthenticated: true,
-        user: verifiedToken.user as User | null,
-      };
-    }
+  try {
+    const account = createAppwriteClient();
+    const user = await account.get();
+    
+    return {
+      isAuthenticated: true,
+      user: user,
+    };
+  } catch (error) {
+    return { isAuthenticated: false };
   }
-
-  return { isAuthenticated: false };
 }
 
 // Clear the session and redirect to the home page
 export async function signOut() {
-  cookies().delete('token');
+  try {
+    const account = createAppwriteClient();
+    await account.deleteSession('current');
+  } catch (error) {
+    // Continue with logout even if session deletion fails
+  }
+  
+  // Clear the session cookie
+  cookies().delete('appwrite-session');
   redirect('/using-hosted-authkit/with-session');
 }

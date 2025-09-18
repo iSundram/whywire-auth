@@ -10,34 +10,66 @@
 // In a real application, you should pay attention to which errors make it
 // to the client for security reasons.
 
-import { WorkOS } from '@workos-inc/node';
-import type { User } from '@workos-inc/node';
+import { Client, Account } from 'appwrite';
+import { Models } from 'appwrite';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
+// Initialize Appwrite client for server-side operations
+function createAppwriteClient() {
+  const client = new Client();
+  
+  client
+    .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1')
+    .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT || 'your-project-id');
+
+  // Get session from cookies
+  const session = cookies().get('appwrite-session');
+  if (session) {
+    client.setSession(session.value);
+  }
+
+  return new Account(client);
+}
 
 export async function getUser(prevState: any, formData: FormData): Promise<Response> {
   try {
-    const users = await workos.userManagement.listUsers({ email: String(formData.get('email')) });
-    const user = users.data[0];
+    const account = createAppwriteClient();
+    
+    // Get current user (Appwrite doesn't support listing users by email in client SDK)
+    // In a real app, you might want to use the server SDK or store user data in a database
+    const user = await account.get();
     return { user };
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }
 
 export async function updateUser(prevState: any, formData: FormData): Promise<Response> {
   try {
-    const user = await workos.userManagement.updateUser({
-      userId: String(formData.get('userId')),
-      firstName: String(formData.get('firstName')),
-      lastName: String(formData.get('lastName')),
-    });
+    const account = createAppwriteClient();
+    const name = String(formData.get('name'));
+
+    // Update user name
+    const user = await account.updateName(name);
+    
     revalidatePath('/users-table');
     return { user };
-  } catch (error) {
-    return { error: JSON.parse(JSON.stringify(error)) };
+  } catch (error: any) {
+    return { 
+      error: {
+        code: error.code || 'UNKNOWN_ERROR',
+        message: error.message || 'An unknown error occurred',
+        type: error.type || 'general'
+      }
+    };
   }
 }
 
-type Response = { user: User } | { error: any };
+type Response = { user: Models.User<Models.Preferences> } | { error: any };
