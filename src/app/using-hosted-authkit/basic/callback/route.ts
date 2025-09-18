@@ -1,7 +1,7 @@
-import { WorkOS } from '@workos-inc/node';
 import { redirect } from 'next/navigation';
+import { account } from '@/lib/appwrite';
 
-// This is a Next.js Route Handler.
+// This is a Next.js Route Handler for Appwrite OAuth callback.
 //
 // If your application is a single page app (SPA) with a separate backend you will need to:
 // - create a backend endpoint to handle the request
@@ -11,20 +11,27 @@ import { redirect } from 'next/navigation';
 // In a real application, you would probably store the user in a token (JWT)
 // and store that token in your DB or use cookies (See `with-session` example for more details).
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
-
 export async function GET(request: Request) {
-  const code = new URL(request.url).searchParams.get('code') || '';
+  const url = new URL(request.url);
+  const userId = url.searchParams.get('userId');
+  const secret = url.searchParams.get('secret');
 
   let response;
 
-  try {
-    response = await workos.userManagement.authenticateWithCode({
-      clientId: process.env.WORKOS_CLIENT_ID || '',
-      code,
-    });
-  } catch (error) {
-    response = error;
+  if (!userId || !secret) {
+    response = { error: 'Missing userId or secret' };
+  } else {
+    try {
+      // Create a session with the OAuth secret
+      const session = await account.createSession(userId, secret);
+      
+      // Get user information
+      const user = await account.get();
+      
+      response = { user, session };
+    } catch (error) {
+      response = { error: error };
+    }
   }
 
   if (response) {

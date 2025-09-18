@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { jwtVerify } from 'jose';
-import type { User } from '@workos-inc/node';
+import type { Models } from 'appwrite';
 
 export function getJwtSecretKey() {
   const secret = process.env.JWT_SECRET_KEY;
@@ -25,16 +25,16 @@ export async function verifyJwtToken(token: string) {
 // Verify the JWT and return the user
 export async function getUser(): Promise<{
   isAuthenticated: boolean;
-  user?: User | null;
+  user?: Models.User<Models.Preferences> | null;
 }> {
-  const token = cookies().get('token')?.value;
+  const token = cookies().get('appwrite_session')?.value;
 
   if (token) {
     const verifiedToken = await verifyJwtToken(token);
     if (verifiedToken) {
       return {
         isAuthenticated: true,
-        user: verifiedToken.user as User | null,
+        user: verifiedToken.user as Models.User<Models.Preferences> | null,
       };
     }
   }
@@ -44,6 +44,6 @@ export async function getUser(): Promise<{
 
 // Clear the session and redirect to the home page
 export async function signOut() {
-  cookies().delete('token');
+  cookies().delete('appwrite_session');
   redirect('/using-hosted-authkit/with-session');
 }
